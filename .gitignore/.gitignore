@@ -1,0 +1,7 @@
+.idea/
+*.pyc
+models/
+archive/
+glove/
+ubuntu/
+word2vec/

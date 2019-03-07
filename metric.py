@@ -170,13 +170,58 @@ class GenericEvaluator:
             return set(z[:idx]).difference(['name', 'address', 'postcode', 'phone', 'area', 'pricerange', 'restaurant',
                                             'restaurants', 'style', 'price', 'food', 'EOS_M'])
 
+
+    def _extract_request(self, z):
+        z = z.split()
+        if 'EOS_Z1' not in z or z[-1] == 'EOS_Z1':
+            return set()
+        else:
+            idx = z.index('EOS_Z1')
+            return set(z[idx+1:])
+
     @report
     def tracker_metric(self, data, tracker_type):
         tp, fp, fn = 0, 0, 0
         goal_accr, total = 0, 1e-8
         for row in data:
+            '''
             gen = self._extract_constraint(row['generated_latent'])
             truth = self._extract_constraint(row['latent'])
+            '''
+            if tracker_type == 'constraint':
+                gen = self._extract_constraint(row['generated_latent'])
+                truth = self._extract_constraint(row['latent'])
+                '''
+                print("--------GENERATE CONSTRAINT--------")
+                print("generated_latent", row['generated_latent'])
+                print("generated constraint", gen)
+                print("ground truth constraint", truth)
+                print("--------GENERATE CONSTRAINT--------")
+                '''
+            elif tracker_type == 'request':
+                gen = self._extract_request(row['generated_latent'])
+                truth = self._extract_request(row['latent'])
+                '''
+                print("--------GENERATE REQUEST--------")
+                print("generated_latent", row['generated_latent'])
+                print("ground truth latent", row['latent'])
+                print("generated request", gen)
+                print("ground truth request", truth)
+                print("--------GENERATE REQUEST--------")
+                '''
+            elif tracker_type == 'all':
+                gen = self._extract_request(row['generated_latent']).union(self._extract_constraint(row['generated_latent']))
+                truth = self._extract_request(row['latent']).union(self._extract_constraint(row['latent']))
+                '''
+                print("--------GENERATE ALL--------")
+                print("generated_latent", row['generated_latent'])
+                print("ground truth latent", row['latent'])
+                print("generated all", gen)
+                print("ground truth all", truth)
+                print("--------GENERATE ALL--------")
+                '''
+            else:
+                raise ValueError('what is %s tracker bro?' % tracker_type)
 
             valid = tracker_type != 'constraint' or ('thank' not in row['user'] and 'bye' not in row['user'])
             if valid:
@@ -188,10 +233,25 @@ class GenericEvaluator:
                 for c in truth:
                     if c not in gen:
                         fn += 1
+
             if tracker_type == 'constraint' and truth and valid:
+                total += 1
+                if set(gen) == set(truth) or (gen.difference(truth).union(truth.difference(gen))
+                                                             == {'north'} and 'american' in gen) \
+                                            or (gen.difference(truth).union(truth.difference(gen)) == {'oriental'} and 'asian' in gen):
+                    goal_accr += 1
+                #else:
+                #    print(gen,truth)
+
+            if tracker_type == 'request' and truth:
                 total += 1
                 if set(gen) == set(truth):
                     goal_accr += 1
+            if tracker_type == 'all' and truth and valid:
+                total += 1
+                if set(gen) == set(truth):
+                    goal_accr += 1
+
         precision, recall = tp / (tp + fp + 1e-8), tp / (tp + fn + 1e-8)
         f1 = 2 * precision * recall / (precision + recall + 1e-8)
         goal_accr /= total
@@ -225,10 +285,14 @@ class CamRestEvaluator(GenericEvaluator):
         raw_entities = json.loads(raw_entities.read().lower())
         self.get_entities(raw_entities)
         data = self.read_result_data()
-        bleu_score = self.bleu_metric(data, 'bleu')
+
+        bleu_score = self.bleu_metric(data,'bleu')
         constraint_tracker_score = self.tracker_metric(data, 'constraint')
-        match = self.match_metric(data, 'match')
+        request_tracker_score = self.tracker_metric(data, 'request')
+        tracker_score = self.tracker_metric(data, 'all')
+        match, success = self.match_metric(data, 'match', raw_data=raw_data)
         self._print_dict(self.metric_dict)
+
 
     def get_entities(self, entity_data):
         for k in entity_data['informable']:
@@ -246,30 +310,87 @@ class CamRestEvaluator(GenericEvaluator):
             s.add('moderate')
         # return intersection with possible constraints provided by the corpus
         return s.intersection(self.entities)
+    def _extract_request(self, z):
+        z = z.split()
+        return set(z).intersection(['address', 'postcode', 'phone', 'area', 'pricerange','food', 'name'])
 
     @report
-    def match_metric(self, data, sub='match'):
+    def match_metric(self, data, sub='match', raw_data=None):
         dials = self.pack_dial(data)
         match, total = 0, 1e-8
+        success=0
         for dial_id in dials:
+            truth_req, gen_req = [], []
             dial = dials[dial_id]
             gen_latent, truth_cons, gen_cons = None, None, set()
             truth_turn_num = -1
+            truth_response_req = []
             for turn_num, turn in enumerate(dial):
                 if 'SLOT' in turn['generated_response']:
                     gen_latent = turn['generated_latent']
                     gen_cons = self._extract_constraint(gen_latent)
                 if 'SLOT' in turn['response']:
                     truth_cons = self._extract_constraint(turn['latent'])
+                gen_response_token = turn['generated_response'].split()
+                response_token = turn['response'].split()
+                for idx, w in enumerate(gen_response_token):
+                    if w.endswith('SLOT') and w != 'SLOT':
+                        gen_req.append(w.split('_')[0])
+                    if w == 'SLOT' and idx != 0:
+                        gen_req.append(gen_response_token[idx - 1])
+                for idx, w in enumerate(response_token):
+                    if w.endswith('SLOT') and w != 'SLOT':
+                        truth_response_req.append(w.split('_')[0])
+
             if not gen_cons:
                 gen_latent = dial[-1]['generated_latent']
                 gen_cons = self._extract_constraint(gen_latent)
+
+            for req in raw_data[dial_id]['goal']['request-slots']:
+                truth_req.append(req)
+            truth_req = set(truth_response_req).intersection(truth_req)
+
+            '''
             if truth_cons:
                 if gen_cons == truth_cons:
                     match += 1
                 total += 1
+            '''
+            #print(truth_req)
+            #print(len(truth_req)!=0)
+            if truth_cons and len(truth_req) != 0:
+                gen_latent_split = gen_latent.split()
+                '''
+                print("----MATCHRATE----")
+                print("gen_latent",gen_latent)
+                print("generated constrain: ", gen_cons)
+                print("ground truth constrain", truth_cons)
+                print("generated request: ", gen_req)
+                print("ground truth request", truth_req)
+                print("----MATCHRATE----")
+                '''
+                if gen_cons == truth_cons:
+                    match += 1
+                    succ = True
+                    for r in truth_req:
+                        if r not in gen_req:
+                            succ = False
+                    if succ:
+                        #print("bingo")
+                        success += 1
+                    else:
+                        '''
+                        print("gen_response_token",gen_response_token)
+                        print("response_token", response_token)
+                        print("----------DIAL------------")
+                        print(dial)
+                        print("----------DIAL------------")
+                        '''
+                #else:
+                #    print(gen_cons, truth_cons)
+                total += 1
 
-        return match / total
+        return match / total, success/total
 
 
 class KvretEvaluator(GenericEvaluator):
@@ -287,9 +408,12 @@ class KvretEvaluator(GenericEvaluator):
         for i, row in enumerate(data):
             data[i]['response'] = self.clean_by_intent(data[i]['response'], int(data[i]['dial_id']))
             data[i]['generated_response'] = self.clean_by_intent(data[i]['generated_response'], int(data[i]['dial_id']))
-        match_rate = self.match_rate_metric(data, 'match')
+        match_rate = self.match_rate_metric(data, 'match', raw_data = self.raw_data)
         bleu_score = self.bleu_metric(data, 'bleu')
         constraint_f1 = self.tracker_metric(data, 'constraint')
+        request_tracker_score = self.tracker_metric(data, 'request')
+        tracker_score = self.tracker_metric(data,'all')
+
         self._print_dict(self.metric_dict)
 
     def clean_by_intent(self, s, i):
@@ -343,6 +467,12 @@ class KvretEvaluator(GenericEvaluator):
                     if flg:
                         break
         return res
+    def _extract_request(self, z):
+        z = z.split()
+        all_reqs = ['address', 'traffic', 'poi', 'poi_type', 'distance', 'weather', 'temperature', 'weather_attribute',
+                'date', 'time', 'location', 'event', 'agenda', 'party', 'room', 'weekly_time', 'forecast']
+        return set(z).intersection(all_reqs)
+
 
     def constraint_same(self, truth_cons, gen_cons):
         if not truth_cons and not gen_cons:
@@ -350,6 +480,7 @@ class KvretEvaluator(GenericEvaluator):
         if not truth_cons or not gen_cons:
             return False
         return setsim(gen_cons, truth_cons)
+
 
     def _get_entity_dict(self, entity_data):
         entity_dict = {}
@@ -371,22 +502,37 @@ class KvretEvaluator(GenericEvaluator):
         self.entity_dict = entity_dict
 
     @report
-    def match_rate_metric(self, data, sub='match', latents='./data/kvret/test.latent.pkl'):
+    def match_rate_metric(self, data, sub='match', latents='./data/kvret/test.latent.pkl', raw_data = None):
         dials = self.pack_dial(data)
         match, total = 0, 1e-8
+        success = 0
         latent_data = pickle.load(open(latents, 'rb'))
         # find out the last placeholder and see whether that is correct
         # if no such placeholder, see the final turn, because it can be a yes/no question or scheduling dialogue
         for dial_id in dials:
+            truth_req, gen_req = [], []
             dial = dials[dial_id]
             gen_latent, truth_cons, gen_cons = None, None, set()
             truth_turn_num = -1
+            truth_response_req = []
             for turn_num, turn in enumerate(dial):
+
                 if 'SLOT' in turn['generated_response']:
                     gen_latent = turn['generated_latent']
                     gen_cons = self._extract_constraint(gen_latent)
                 if 'SLOT' in turn['response']:
                     truth_cons = self._extract_constraint(turn['latent'])
+
+                    gen_response_token = turn['generated_response'].split()
+                    response_token = turn['response'].split()
+                    for idx, w in enumerate(gen_response_token):
+                        if w.endswith('SLOT') and w != 'SLOT':
+                            gen_req.append(w.split('_')[0])
+                        if w == 'SLOT' and idx != 0:
+                            gen_req.append(gen_response_token[idx - 1])
+                    for idx, w in enumerate(response_token):
+                        if w.endswith('SLOT') and w != 'SLOT':
+                            truth_response_req.append(w.split('_')[0])
 
             # KVRET dataset includes "scheduling" (so often no SLOT decoded in ground truth)
             if not truth_cons:
@@ -396,12 +542,39 @@ class KvretEvaluator(GenericEvaluator):
                 gen_latent = dial[-1]['generated_latent']
                 gen_cons = self._extract_constraint(gen_latent)
 
-            if truth_cons:
+            for req, flag in raw_data[dial_id]['dialogue'][1]['data']['requested'].items():
+                if flag == True:
+                    truth_req.append(req)
+            truth_req = set(truth_response_req).intersection(truth_req)
+
+            if truth_cons and len(truth_req)!=0:
+                gen_latent_split = gen_latent.split()
+                print("----MATCHRATE----")
+                print("gen_latent",gen_latent)
+                print("generated constrain: ", gen_cons)
+                print("ground truth constrain", truth_cons)
+                print("generated request: ", gen_req)
+                print("ground truth request", truth_req)
+                print("----MATCHRATE----")
+
                 if self.constraint_same(gen_cons, truth_cons):
                     match += 1
+                    succ = True
+                    for r in truth_req:
+                        if r not in gen_req:
+                            succ = False
+                    if succ:
+                        print("bingo")
+                        success += 1
+                    else:
+                        print("gen_response_token", gen_response_token)
+                        print("response_token", response_token)
+                        print("----------DIAL------------")
+                        print(dial)
+                        print("----------DIAL------------")
                 total += 1
 
-        return match / total
+        return match / total, success / total
 
     def _tokenize(self, sent):
         return ' '.join(word_tokenize(sent))

@@ -181,8 +181,9 @@ class Model:
             logging.info('validation loss in epoch %d sup:%6f unsup:%6f' % (epoch, valid_sup_loss, valid_unsup_loss))
             logging.info('time for epoch %d: %6f' % (epoch, time.time() - sw))
             valid_loss = valid_sup_loss + valid_unsup_loss
-            self.save_model(epoch)
+
             if valid_loss <= prev_min_loss:
+                self.save_model(epoch)
                 prev_min_loss = valid_loss
             else:
                 early_stop_count -= 1
@@ -341,11 +342,11 @@ def main():
                 v = dtype(v)
             setattr(cfg, k, v)
 
-    logging.debug(str(cfg))
     if cfg.cuda:
         torch.cuda.set_device(cfg.cuda_device)
         logging.debug('Device: {}'.format(torch.cuda.current_device()))
     cfg.mode = args.mode
+    logging.debug(str(cfg))
     m = Model(args.dataset.split('-')[-1])
     m.count_params()
     if args.mode == 'train':

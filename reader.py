@@ -1,5 +1,4 @@
 """
-
 Author: Xisen Jin
 
 Defines data reader and batch feeder for the model.
@@ -21,6 +20,26 @@ import time, datetime
 
 
 def clean_replace(s, r, t, forward=True, backward=False):
+    '''
+    replace the original input with SLOT
+    :param s: original input
+    :param r: groundtruth value
+    :param t: SLOT
+    :param forward:
+    :param backward:
+    :return:
+
+    example input:
+    s= 'chiquito restaurant bar is a mexican restaurant located in the south part of town.'
+    r= 'chiquito restaurant bar'
+    t= 'name SLOT'
+    backward = False
+    forward = False
+
+    example output:
+    'name SLOT is a mexican restaurant located in the south part of town.'
+    '''
+
     def clean_replace_single(s, r, t, forward, backward, sidx=0):
         idx = s[sidx:].find(r)
         if idx == -1:
@@ -92,6 +111,7 @@ class _ReaderBase:
                 self._absolute_add_item('<pad>')  # 0
                 self._absolute_add_item('<go>')  # 1
                 self._absolute_add_item('<unk>')  # 2
+                self._absolute_add_item('<go2>')  # 3
 
         def load_vocab(self, vocab_path):
             f = open(vocab_path, 'rb')
@@ -100,6 +120,7 @@ class _ReaderBase:
             self._item2idx = dic['item2idx']
             self._freq_dict = dic['freq_dict']
             f.close()
+
 
         def save_vocab(self, vocab_path):
             f = open(vocab_path, 'wb')
@@ -228,6 +249,19 @@ class _ReaderBase:
         :param turn_batch: dict of [i_1,i_2,...,i_b] with keys
         :return:
         """
+
+
+
+        def replace_oov(src, tgt):
+            tok = tgt.split()
+            for i, w in enumerate(tok):
+                if w.startswith('ITEM'):
+                    offset = int(w.split('_')[1])
+                    if offset < len(src):
+                        print(src[offset])
+                        tok[i] = self.vocab.decode(src[offset])
+            return ' '.join(tok)
+
         results = []
         if eos_syntax is None:
             eos_syntax = {'response': 'EOS_M', 'user': 'EOS_U', 'latent': 'EOS_Z2'}
@@ -241,9 +275,9 @@ class _ReaderBase:
             if gen_m:
                 entry['generated_response'] = self.vocab.sentence_decode(gen_m[i], eos='EOS_M')
             else:
-                entry['generated_latent'] = ''
+                entry['generated_response'] = ''
             if gen_z:
-                entry['generated_latent'] = self.vocab.sentence_decode(gen_z[i],eos='EOS_Z1')
+                entry['generated_latent'] = self.vocab.sentence_decode(gen_z[i],eos='EOS_Z2')
             else:
                 entry['generated_latent'] = ''
             results.append(entry)
@@ -314,13 +348,18 @@ class CamRest676Reader(_ReaderBase):
             for turn in dial['dial']:
                 turn_num = turn['turn']
                 constraint = []
+                requested = []
                 for slot in turn['usr']['slu']:
                     if slot['act'] == 'inform':
                         s = slot['slots'][0][1]
                         if s not in ['dontcare', 'none']:
                             constraint.extend(word_tokenize(s))
+                    else:
+                        requested.extend(word_tokenize(slot['slots'][0][1]))
                 degree = len(self.db_search(constraint))
+                requested = sorted(requested)
                 constraint.append('EOS_Z1')
+                requested.append('EOS_Z2')
                 user = word_tokenize(turn['usr']['transcript']) + ['EOS_U']
                 response = word_tokenize(self._replace_entity(turn['sys']['sent'], vk_map, constraint)) + ['EOS_M']
                 tokenized_dial.append({
@@ -329,10 +368,11 @@ class CamRest676Reader(_ReaderBase):
                     'user': user,
                     'response': response,
                     'constraint': constraint,
+                    'requested': requested,
                     'degree': degree,
                 })
                 if construct_vocab:
-                    for word in user + response + constraint:
+                    for word in user + response + constraint + requested:
                         self.vocab.add_item(word)
             tokenized_data.append(tokenized_dial)
         return tokenized_data
@@ -367,11 +407,11 @@ class CamRest676Reader(_ReaderBase):
         for dial in tokenized_data:
             encoded_dial = []
             prev_response = []
-
             for turn in dial:
                 user = self.vocab.sentence_encode(turn['user'])
                 response = self.vocab.sentence_encode(turn['response'])
                 constraint = self.vocab.sentence_encode(turn['constraint'])
+                requested = self.vocab.sentence_encode(turn['requested'])
                 degree = self._degree_vec_mapping(turn['degree'])
                 turn_num = turn['turn_num']
                 dial_id = turn['dial_id']
@@ -381,7 +421,7 @@ class CamRest676Reader(_ReaderBase):
                     'turn_num': turn_num,
                     'user': prev_response + user,
                     'response': response,
-                    'latent': constraint,
+                    'latent': constraint + requested,
                     'u_len': len(prev_response + user),
                     'm_len': len(response),
                     'p_len': len(prev_response + user + response),
@@ -516,6 +556,13 @@ class KvretReader(_ReaderBase):
         return ' '.join([self.wn.lemmatize(_) for _ in sent.split()])
 
     def _replace_entity(self, response, vk_map, prev_user_input, intent):
+        '''
+        :param response: 'the nearest parking garage is dish parking at address SLOT would you like direction there ?'
+        :param vk_map: a dict such like { '5 mile': 'distance', '6 mile': 'distance', '7 mile': 'distance', '8 mile': 'distance', '9 mile': 'distance'}
+        :param prev_user_input: 'where \\'s the nearest parking garage'
+        :param intent: 'navigate'
+        :return:
+        '''
         response = re.sub('\d+-?\d*fs?', 'temperature_SLOT', response)
         response = re.sub('\d+\s?miles?', 'distance_SLOT', response)
         response = re.sub('\d+\s\w+\s(dr)?(ct)?(rd)?(road)?(st)?(ave)?(way)?(pl)?\w*[.]?','address_SLOT',response)
@@ -525,6 +572,7 @@ class KvretReader(_ReaderBase):
             'navigate': ['poi','traffic','address','distance'],
             'schedule': ['event','date','time','party','agenda','room']
         }
+        reqs = set()
         for v, k in sorted(vk_map.items(), key=lambda x: -len(x[0])):
             start_idx = response.find(v)
             if start_idx == -1 or k not in requestable[intent]:
@@ -537,7 +585,9 @@ class KvretReader(_ReaderBase):
                        response[start_idx:end_idx].replace('.','').replace(' ','').replace("'",'')
             if lm1 == lm2 and lm1 not in prev_user_input and v not in prev_user_input:
                 response = clean_replace(response, response[start_idx:end_idx], k + '_SLOT')
-        return response
+                reqs.add(k)
+
+        return response, reqs
 
     def _clean_constraint_dict(self, constraint_dict, intent, prefer='short'):
         """
@@ -618,6 +668,7 @@ class KvretReader(_ReaderBase):
                     raise ValueError('what is %s intent bro?' % intent)
                 else:
                     continue
+            #prev_response = []
             for turn_num,dial_turn in enumerate(raw_dial['dialogue']):
                 state_dump[(dial_id, turn_num)] = {}
                 if dial_turn['turn'] == 'driver':
@@ -629,7 +680,7 @@ class KvretReader(_ReaderBase):
                     s = dial_turn['data']['utterance']
                     # find entities and replace them
                     s = re.sub('(\d+) ([ap]m)', lambda x: x.group(1) + x.group(2), s)
-                    s = self._replace_entity(s, self.entity_dict, prev_utter, intent)
+                    s, reqs = self._replace_entity(s, self.entity_dict, prev_utter, intent)
                     single_turn['response'] = s.split() + ['EOS_M']
 
                     # get constraints
@@ -639,18 +690,43 @@ class KvretReader(_ReaderBase):
                         for k,v in dial_turn['data']['slots'].items():
                             constraint_dict[k] = v
                     constraint_dict = self._clean_constraint_dict(constraint_dict,intent)
+
                     raw_constraints = constraint_dict.values()
                     raw_constraints_str = self._lemmatize(self._tokenize(' '.join(raw_constraints)))
                     constraints = raw_constraints_str.split()
      
+                    # add separator
+                    constraints = []
+                    for item in raw_constraints:
+                        if constraints:
+                            constraints.append(';')
+                        constraints.extend(item.split())
+                    # get requests
+                    dataset_requested = set(
+                        filter(lambda x: dial_turn['data']['requested'][x], dial_turn['data']['requested'].keys()))
+                    requestable = {
+                        'weather': ['weather_attribute'],
+                        'navigate': ['poi', 'traffic', 'address', 'distance'],
+                        'schedule': ['date', 'time', 'party', 'agenda', 'room']
+                    }
+                    #print("dataset_requested = ", dataset_requested)
+                    #print("reqs = ", reqs)
+                    #print("intersect = ", dataset_requested.intersection(reqs))
+                    #requests = sorted(list(dataset_requested.intersection(reqs)))
+                    requests = sorted(list(dataset_requested))
+
+
+
                     single_turn['constraint'] = constraints + ['EOS_Z1']
+                    single_turn['requested'] = requests + ['EOS_Z2']
                     single_turn['turn_num'] = len(tokenized_dial)
                     single_turn['dial_id'] = dial_id
                     single_turn['degree'] = self.pseudo_db_degree(dial_turn['data']['utterance'])
                     if 'user' in single_turn:
                         state_dump[(dial_id, len(tokenized_dial))]['constraint'] = constraint_dict
-
+                        state_dump[(dial_id, len(tokenized_dial))]['request'] = requests
                         tokenized_dial.append(single_turn)
+                    #prev_response = single_turn['response']
                     single_turn = {}
             if add_to_vocab:
                 for single_turn in tokenized_dial:
@@ -672,7 +748,8 @@ class KvretReader(_ReaderBase):
             prev_response = []
             for turn in dial:
                 turn['constraint'] = self.vocab.sentence_encode(turn['constraint'])
-                turn['latent'] = turn['constraint']
+                turn['requested'] = self.vocab.sentence_encode(turn['requested'])
+                turn['latent'] = turn['constraint'] + turn['requested']
                 turn['user'] = prev_response + self.vocab.sentence_encode(turn['user'])
                 turn['response'] = self.vocab.sentence_encode(turn['response'])
                 turn['u_len'] = len(turn['user'])

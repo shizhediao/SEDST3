@@ -251,7 +251,13 @@ class GenericEvaluator:
                 total += 1
                 if set(gen) == set(truth):
                     goal_accr += 1
-
+        '''
+        print("===========================")
+        print("tracker_type = ", tracker_type)
+        print("total = ", total)
+        print("goal_accr = ", goal_accr)
+        print("===========================")
+        '''
         precision, recall = tp / (tp + fp + 1e-8), tp / (tp + fn + 1e-8)
         f1 = 2 * precision * recall / (precision + recall + 1e-8)
         goal_accr /= total

@@ -694,13 +694,16 @@ class KvretReader(_ReaderBase):
                     raw_constraints = constraint_dict.values()
                     raw_constraints_str = self._lemmatize(self._tokenize(' '.join(raw_constraints)))
                     constraints = raw_constraints_str.split()
-     
+
+                    '''
                     # add separator
                     constraints = []
                     for item in raw_constraints:
                         if constraints:
                             constraints.append(';')
                         constraints.extend(item.split())
+                    '''
+
                     # get requests
                     dataset_requested = set(
                         filter(lambda x: dial_turn['data']['requested'][x], dial_turn['data']['requested'].keys()))
@@ -715,8 +718,6 @@ class KvretReader(_ReaderBase):
                     #requests = sorted(list(dataset_requested.intersection(reqs)))
                     requests = sorted(list(dataset_requested))
 
-
-
                     single_turn['constraint'] = constraints + ['EOS_Z1']
                     single_turn['requested'] = requests + ['EOS_Z2']
                     single_turn['turn_num'] = len(tokenized_dial)
@@ -730,7 +731,7 @@ class KvretReader(_ReaderBase):
                     single_turn = {}
             if add_to_vocab:
                 for single_turn in tokenized_dial:
-                    for word_token in single_turn['constraint'] + \
+                    for word_token in single_turn['constraint'] + single_turn['requested'] +\
                             single_turn['user'] + single_turn['response']:
                         self.vocab.add_item(word_token)
             tokenized_data.append(tokenized_dial)

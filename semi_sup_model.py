@@ -10,11 +10,12 @@ from torch.autograd import Variable
 from reader import pad_sequences
 import argparse
 import logging
-from metric import CamRestEvaluator
+from metric import CamRestEvaluator, KvretEvaluator
 
 
 class Model:
     def __init__(self, dataset):
+        self.dataset = dataset
         if dataset == 'camrest':
             self.reader = CamRest676Reader()
         elif dataset == 'kvret':
@@ -150,7 +151,11 @@ class Model:
                                                           m_len=m_len, z_supervised=None, turn_states=turn_states)
                     self.reader.wrap_result(turn_batch, m_idx, z_idx)
                 print('{}\r'.format(batch_num))
-        ev = CamRestEvaluator(cfg.result_path)
+        #ev = CamRestEvaluator(cfg.result_path)
+        if self.dataset == 'camrest':
+            ev = CamRestEvaluator(cfg.result_path)
+        elif self.dataset == 'kvret':
+            ev = KvretEvaluator(cfg.result_path)
         ev.run_metrics()
         self.sedst.train()
 

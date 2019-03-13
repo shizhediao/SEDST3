@@ -149,7 +149,7 @@ class Attn(nn.Module):
         energy = torch.bmm(v, energy)  # [B,1,T]
         return energy
 
-
+'''
 class MultiTurnInferenceDecoder_Z(nn.Module):
     """
     Inference network: copying version of Q_phi(z_t|s_t,m_t) <- Q_phi(z_ti|s_t,m_t,z_t[1..i-1])
@@ -243,12 +243,224 @@ class MultiTurnInferenceDecoder_Z(nn.Module):
         sigma_ae = torch.exp(log_sigma_ae)
         sampled_ae = appr_emb + torch.mul(sigma_ae, rand_eps)
         return sampled_ae, gru_out, last_hidden, proba, appr_emb, log_sigma_ae
+'''
 
+class MultiTurnInferenceDecoder_Z(nn.Module):
+    """
+    Inference network: copying version of Q_phi(z_t|s_t,m_t) <- Q_phi(z_ti|s_t,m_t,z_t[1..i-1])
+    """
+
+    def __init__(self, embed_size, hidden_size, vocab_size, dropout_rate):
+        super().__init__()
+        self.attn_u = Attn(hidden_size)
+        #self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
+        self.area_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.area_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        # self.area_hidden = nn.Linear(hidden_size, hidden_size)
+
+        self.food_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.food_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        # self.food_hidden = nn.Linear(hidden_size, hidden_size)
+
+        self.pricerange_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.pricerange_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        # self.pricerange_hidden = nn.Linear(hidden_size, hidden_size)
+
+        self.req1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req4_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req4_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req5_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req5_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req6_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req6_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req7_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req7_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req8_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req8_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req9_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req9_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req10_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req10_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req11_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req11_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req12_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req12_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.hidden_style = [self.area_hidden_style, self.food_hidden_style, self.pricerange_hidden_style,
+                             self.req1_hidden_style, self.req2_hidden_style, self.req3_hidden_style,
+                             self.req4_hidden_style, self.req5_hidden_style, self.req6_hidden_style,
+                             self.req7_hidden_style, self.req8_hidden_style, self.req9_hidden_style,
+                             self.req10_hidden_style, self.req11_hidden_style, self.req12_hidden_style]
+        self.hidden = [self.area_hidden, self.food_hidden, self.pricerange_hidden, self.req1_hidden, self.req2_hidden,
+                       self.req3_hidden, self.req4_hidden, self.req5_hidden, self.req6_hidden, self.req7_hidden,
+                       self.req8_hidden, self.req9_hidden, self.req10_hidden, self.req11_hidden, self.req12_hidden]
+
+        self.w1 = nn.Linear(hidden_size, vocab_size)
+        self.mu = nn.Linear(vocab_size, embed_size)
+        self.log_sigma = nn.Linear(vocab_size, embed_size)
+        self.dropout_rate = dropout_rate
+        self.vocab_size = vocab_size
+        self.proj_copy1 = nn.Linear(hidden_size, hidden_size)
+        self.proj_copy2 = nn.Linear(hidden_size, hidden_size)
+        self.proj_copy3 = nn.Linear(hidden_size, hidden_size)
+
+    def forward(self, u_input, u_enc_out, pv_pz_proba, pv_z_dec_out, m_input, m_enc_out, embed_z, last_hidden,
+                rand_eps, u_input_np, m_input_np, mlp_index):
+        """
+        Similar to base class method
+        :param m_input:
+        :param u_input:
+        :param u_enc_out:
+        :param m_enc_out:
+        :param embed_z:
+        :param last_hidden:
+        :param rand_eps:
+        :return:
+        """
+        sparse_u_input = Variable(get_sparse_input_efficient(u_input_np), requires_grad=False)  # [B,T,V]
+        sparse_m_input = Variable(get_sparse_input_efficient(m_input_np), requires_grad=False)  # [B,T,V]
+        mlp_index = mlp_index % 12
+        # if cfg.cuda: sparse_m_input = sparse_m_input.cuda()
+        # if cfg.cuda: sparse_u_input = sparse_u_input.cuda()
+        hidden_style_one = self.hidden_style[mlp_index]
+        hidden_one = self.hidden[mlp_index]
+        last_hidden = hidden_style_one(last_hidden)
+        u_context = self.attn_u(last_hidden, u_enc_out)  #1*32*50
+        embed_z = F.dropout(embed_z, self.dropout_rate)
+        gru_in = torch.cat([u_context, embed_z], 2)  # 1*32*100
+
+        #gru_out, last_hidden = self.gru(embed_z, last_hidden)
+        gru_out = hidden_one(gru_in)
+        last_hidden = gru_out
+
+        gen_score = self.w1(gru_out).squeeze(0) # [B,V]
+        u_copy_score = F.tanh(self.proj_copy1(u_enc_out.transpose(0, 1)))  # [B,T,H]
+        m_copy_score = F.tanh(self.proj_copy2(m_enc_out.transpose(0, 1)))
+        if not cfg.force_stable:
+            # unstable version of copynet for small dataset
+            u_copy_score = torch.exp(torch.matmul(u_copy_score, gru_out.squeeze(0).unsqueeze(2)).squeeze(2))  # [B,T]
+            m_copy_score = torch.exp(torch.matmul(m_copy_score, gru_out.squeeze(0).unsqueeze(2)).squeeze(2))  # [B,T]
+            u_copy_score, m_copy_score = u_copy_score.cpu(), m_copy_score.cpu()
+            u_copy_score = torch.log(torch.bmm(u_copy_score.unsqueeze(1), sparse_u_input)).squeeze(1)  # [B,V]
+            m_copy_score = torch.log(torch.bmm(m_copy_score.unsqueeze(1), sparse_m_input)).squeeze(1)  # [B,V]
+        else:
+            # stable version of copynet
+            u_copy_score = torch.matmul(u_copy_score, gru_out.squeeze(0).unsqueeze(2)).squeeze(2)
+            m_copy_score = torch.matmul(m_copy_score, gru_out.squeeze(0).unsqueeze(2)).squeeze(2)
+            u_copy_score, m_copy_score = u_copy_score.cpu(), m_copy_score.cpu()
+            u_copy_score_max, m_copy_score_max = torch.max(u_copy_score, dim=1, keepdim=True)[0], \
+                                                 torch.max(m_copy_score, dim=1, keepdim=True)[0]
+            u_copy_score = torch.exp(u_copy_score - u_copy_score_max)  # [B,T]
+            m_copy_score = torch.exp(m_copy_score - m_copy_score_max)  # [B,T]
+            # u_copy_score, m_copy_score = u_copy_score.cpu(), m_copy_score.cpu()
+            u_copy_score = torch.log(torch.bmm(u_copy_score.unsqueeze(1), sparse_u_input)).squeeze(
+                1) + u_copy_score_max  # [B,V]
+            m_copy_score = torch.log(torch.bmm(m_copy_score.unsqueeze(1), sparse_m_input)).squeeze(
+                1) + m_copy_score_max  # [B,V]
+        u_copy_score, m_copy_score = cuda_(u_copy_score), cuda_(m_copy_score)
+        if pv_pz_proba is not None:
+            pv_pz_proba = shift(pv_pz_proba)
+            pv_z_copy_score = F.tanh(self.proj_copy3(pv_z_dec_out.transpose(0, 1)))  # [B,T,H]
+            if cfg.force_stable:
+                pv_z_copy_score = torch.exp(
+                    torch.matmul(pv_z_copy_score, gru_out.squeeze(0).unsqueeze(2)).squeeze(2))  # [B,T]
+                pv_z_copy_score = torch.log(
+                    torch.bmm(pv_z_copy_score.unsqueeze(1), pv_pz_proba.transpose(0, 1))).squeeze(
+                    1)  # [B,V]
+            else:
+                pv_z_copy_score = torch.matmul(pv_z_copy_score, gru_out.squeeze(0).unsqueeze(2)).squeeze(2)
+                pv_z_copy_score_max = torch.max(pv_z_copy_score, dim=1, keepdim=True)[0]
+                pv_z_copy_score = torch.exp(pv_z_copy_score - pv_z_copy_score_max)
+                pv_z_copy_score = torch.log(
+                    torch.bmm(pv_z_copy_score.unsqueeze(1), pv_pz_proba.transpose(0, 1))).squeeze(
+                    1) + pv_z_copy_score_max  # [B,V]
+            scores = F.softmax(torch.cat([gen_score, u_copy_score, m_copy_score, pv_z_copy_score], dim=1), dim=1)
+            gen_score, u_copy_score, m_copy_score, pv_z_copy_score = tuple(
+                torch.split(scores, gen_score.size(1), dim=1))
+            proba = gen_score + u_copy_score + m_copy_score + pv_z_copy_score
+        else:
+            scores = F.softmax(torch.cat([gen_score, u_copy_score, m_copy_score], dim=1), dim=1)
+            gen_score, u_copy_score, m_copy_score = tuple(
+                torch.split(scores, gen_score.size(1), dim=1))
+            proba = gen_score + u_copy_score + m_copy_score
+        appr_emb = self.mu(proba)
+        log_sigma_ae = self.log_sigma(proba)
+        sigma_ae = torch.exp(log_sigma_ae)
+        sampled_ae = appr_emb + torch.mul(sigma_ae, rand_eps)
+        return sampled_ae, gru_out, last_hidden, proba, appr_emb, log_sigma_ae
 
 class MultiTurnPriorDecoder_Z(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, dropout_rate):
         super().__init__()
-        self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
+        self.attn_u = Attn(hidden_size)
+        #self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
+        self.area_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.area_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        # self.area_hidden = nn.Linear(hidden_size, hidden_size)
+
+        self.food_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.food_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        # self.food_hidden = nn.Linear(hidden_size, hidden_size)
+
+        self.pricerange_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.pricerange_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        # self.pricerange_hidden = nn.Linear(hidden_size, hidden_size)
+
+        self.req1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req4_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req4_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req5_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req5_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req6_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req6_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req7_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req7_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req8_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req8_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req9_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req9_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req10_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req10_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req11_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req11_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.req12_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.req12_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.hidden_style = [self.area_hidden_style, self.food_hidden_style, self.pricerange_hidden_style, self.req1_hidden_style, self.req2_hidden_style, self.req3_hidden_style, self.req4_hidden_style, self.req5_hidden_style,self.req6_hidden_style, self.req7_hidden_style, self.req8_hidden_style, self.req9_hidden_style, self.req10_hidden_style,self.req11_hidden_style, self.req12_hidden_style]
+        self.hidden = [self.area_hidden, self.food_hidden, self.pricerange_hidden, self.req1_hidden, self.req2_hidden, self.req3_hidden, self.req4_hidden, self.req5_hidden,self.req6_hidden, self.req7_hidden, self.req8_hidden, self.req9_hidden, self.req10_hidden,self.req11_hidden, self.req12_hidden]
+
         self.w1 = nn.Linear(hidden_size, vocab_size)
         self.proj_copy1 = nn.Linear(hidden_size, hidden_size)
         self.proj_copy2 = nn.Linear(hidden_size, hidden_size)
@@ -257,10 +469,22 @@ class MultiTurnPriorDecoder_Z(nn.Module):
         self.dropout_rate = dropout_rate
 
     def forward(self, u_input, u_enc_out, pv_pz_proba, pv_z_dec_out, embed_z, last_hidden, rand_eps, u_input_np,
-                m_input_np):
+                m_input_np, mlp_index):
         sparse_u_input = Variable(get_sparse_input_efficient(u_input_np), requires_grad=False)
+        mlp_index = mlp_index % 12
+        #print("mlp_index",mlp_index)
+
+        hidden_style_one = self.hidden_style[mlp_index]
+        hidden_one = self.hidden[mlp_index]
+        last_hidden = hidden_style_one(last_hidden)
+        u_context = self.attn_u(last_hidden, u_enc_out)  #1*32*50
         embed_z = F.dropout(embed_z, self.dropout_rate)
-        gru_out, last_hidden = self.gru(embed_z, last_hidden)
+        gru_in = torch.cat([u_context, embed_z], 2)  # 1*32*100
+
+        #gru_out, last_hidden = self.gru(embed_z, last_hidden)
+        gru_out = hidden_one(gru_in)
+        last_hidden = gru_out
+
         gen_score = self.w1(gru_out).squeeze(0)
         u_copy_score = F.tanh(self.proj_copy1(u_enc_out.transpose(0, 1)))  # [B,T,H]
         if not cfg.force_stable:
@@ -453,14 +677,15 @@ class SemiSupervisedSEDST(nn.Module):
         pv_pz_proba = turn_states.get('pv_pz_proba', None)
         pv_z_outs = turn_states.get('pv_z_dec_outs', None)
         batch_size = u_input.size(1)
-        u_enc_out, u_enc_hidden = self.u_encoder(u_input, u_len)
-        last_hidden = u_enc_hidden[:-1]
+        u_enc_out, u_enc_hidden = self.u_encoder(u_input, u_len)    #u_enc_out = [20, 24, 50]  u_enc_hidden = [2, 24, 50]
+        last_hidden = u_enc_hidden[:-1] #[1, 24, 50]
         # initial approximate embedding: SOS token initialized with all zero
         # Pi(z|u)
         pz_ae = cuda_(Variable(torch.zeros(1, batch_size, self.embed_size)))
         pz_proba, pz_mu, pz_log_sigma = [], [], []
         pz_dec_outs = []
         z_length = z_input.size(0) if z_input is not None else self.z_length
+        #z_length=self.z_length
         for t in range(z_length):
             if cfg.sampling:
                 rand_eps = Variable(torch.normal(means=torch.zeros(1, batch_size, cfg.embedding_size), std=1))
@@ -470,7 +695,7 @@ class SemiSupervisedSEDST(nn.Module):
             pz_ae, last_hidden, pz_dec_out, proba, appr_emb, log_sigma_ae = \
                 self.pz_decoder(u_input=u_input, u_enc_out=u_enc_out, pv_pz_proba=pv_pz_proba, pv_z_dec_out=pv_z_outs,
                                 embed_z=pz_ae, last_hidden=last_hidden, rand_eps=rand_eps, u_input_np=u_input_np,
-                                m_input_np=m_input_np)
+                                m_input_np=m_input_np, mlp_index=t)
             pz_proba.append(proba)
             pz_mu.append(appr_emb)
             pz_log_sigma.append(log_sigma_ae)
@@ -517,7 +742,7 @@ class SemiSupervisedSEDST(nn.Module):
                     self.qz_decoder(u_input=u_input, u_enc_out=u_enc_out, pv_pz_proba=pv_pz_proba,
                                     pv_z_dec_out=pv_z_outs,
                                     m_input=p_input, m_enc_out=p_enc_out, u_input_np=u_input_np, m_input_np=p_input_np,
-                                    embed_z=qz_ae, last_hidden=last_hidden, rand_eps=rand_eps)
+                                    embed_z=qz_ae, last_hidden=last_hidden, rand_eps=rand_eps, mlp_index=t)
                 qz_proba.append(proba)
                 qz_mu.append(appr_emb)
                 qz_log_sigma.append(log_sigma_ae)

@@ -366,7 +366,7 @@ class CamRestEvaluator(GenericEvaluator):
             #print(len(truth_req)!=0)
             if truth_cons and len(truth_req) != 0:
                 gen_latent_split = gen_latent.split()
-                '''
+
                 print("----MATCHRATE----")
                 print("gen_latent",gen_latent)
                 print("generated constrain: ", gen_cons)
@@ -374,7 +374,7 @@ class CamRestEvaluator(GenericEvaluator):
                 print("generated request: ", gen_req)
                 print("ground truth request", truth_req)
                 print("----MATCHRATE----")
-                '''
+
                 if gen_cons == truth_cons:
                     match += 1
                     succ = True
@@ -410,10 +410,14 @@ class KvretEvaluator(GenericEvaluator):
         raw_json.close()
 
     def run_metrics(self):
+        #print("DIAO8")
         data = self.read_result_data()
+        #print("DIAO9")
         for i, row in enumerate(data):
+            #print("DIAO10", data[i]['response'], int(data[i]['dial_id']))
             data[i]['response'] = self.clean_by_intent(data[i]['response'], int(data[i]['dial_id']))
             data[i]['generated_response'] = self.clean_by_intent(data[i]['generated_response'], int(data[i]['dial_id']))
+        #print("DIAO11")
         match_rate = self.match_rate_metric(data, 'match', raw_data = self.raw_data)
         bleu_score = self.bleu_metric(data, 'bleu')
         constraint_f1 = self.tracker_metric(data, 'constraint')

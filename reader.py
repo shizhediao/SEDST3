@@ -44,6 +44,7 @@ def clean_replace(s, r, t, forward=True, backward=False):
         idx = s[sidx:].find(r)
         if idx == -1:
             return s, -1
+        idx += sidx
         idx_r = idx + len(r)
         if backward:
             while idx > 0 and s[idx - 1]:
@@ -250,8 +251,6 @@ class _ReaderBase:
         :return:
         """
 
-
-
         def replace_oov(src, tgt):
             tok = tgt.split()
             for i, w in enumerate(tok):
@@ -340,6 +339,20 @@ class CamRest676Reader(_ReaderBase):
         self.result_file = ''
         self.db = []
 
+    def sort_constraint(self, unsort_constraint):
+        area = ["centre","north","west","south","east"]
+        food = ["afghan","african","afternoon tea","asian oriental","australasian","australian","austrian","barbeque","basque","belgian","bistro","brazilian","british","canapes","cantonese","caribbean","catalan","chinese","christmas","corsica","creative","crossover","cuban","danish","eastern european","english","eritrean","european","french","fusion","gastropub","german","greek","halal","hungarian","indian","indonesian","international","irish","italian","jamaican","japanese","korean","kosher","latin american","lebanese","light bites","malaysian","mediterranean","mexican","middle eastern","modern american","modern eclectic","modern european","modern global","molecular gastronomy","moroccan","new zealand","north african","north american","north indian","northern european","panasian","persian","polish","polynesian","portuguese","romanian","russian","scandinavian","scottish","seafood","singaporean","south african","south indian","spanish","sri lankan","steakhouse","swedish","swiss","thai","the americas","traditional","turkish","tuscan","unusual","vegetarian","venetian","vietnamese","welsh","world"]
+        pricerange = ["cheap","moderate","expensive"]
+        sorted_constraint = ['none','none','none']
+        for i in range(len(unsort_constraint)):
+            if unsort_constraint[i] in area:
+                sorted_constraint[0] = unsort_constraint[i]
+            if unsort_constraint[i] in food:
+                sorted_constraint[1] = unsort_constraint[i]
+            if unsort_constraint[i] in pricerange:
+                sorted_constraint[2] = unsort_constraint[i]
+        return sorted_constraint
+
     def _get_tokenized_data(self, raw_data, db_data, construct_vocab):
         tokenized_data = []
         vk_map = self._value_key_map(db_data)
@@ -356,9 +369,12 @@ class CamRest676Reader(_ReaderBase):
                             constraint.extend(word_tokenize(s))
                     else:
                         requested.extend(word_tokenize(slot['slots'][0][1]))
+
+                sorted_constraint = self.sort_constraint(constraint)
                 degree = len(self.db_search(constraint))
                 requested = sorted(requested)
                 constraint.append('EOS_Z1')
+                sorted_constraint.append('EOS_Z1')
                 requested.append('EOS_Z2')
                 user = word_tokenize(turn['usr']['transcript']) + ['EOS_U']
                 response = word_tokenize(self._replace_entity(turn['sys']['sent'], vk_map, constraint)) + ['EOS_M']
@@ -367,12 +383,12 @@ class CamRest676Reader(_ReaderBase):
                     'turn_num': turn_num,
                     'user': user,
                     'response': response,
-                    'constraint': constraint,
+                    'constraint': sorted_constraint,
                     'requested': requested,
                     'degree': degree,
                 })
                 if construct_vocab:
-                    for word in user + response + constraint + requested:
+                    for word in user + response + sorted_constraint + requested:
                         self.vocab.add_item(word)
             tokenized_data.append(tokenized_dial)
         return tokenized_data
@@ -501,6 +517,52 @@ class KvretReader(_ReaderBase):
         self.tokenized_data_path = './data/kvret/'
         self._construct(cfg.train, cfg.dev, cfg.test, cfg.entity)
         #self.test = self.train
+
+    def sort_constraint(self, unsort_constraint):
+        request = ["poi", "distance", "room", "time", "weatherattribute", "agenda", "address", "date", "party"]
+        weatherattribute = ["dry", "misty", "frost", "humid", "blizzard", "stormy", "overcast", "snow", "hail", "hot", "windy", "warm", "90f", "rain", "foggy", "dew", "cloudy", "drizzle", "clear sky"]
+        distance = ["7 mile", "2 mile", "8 mile", "3 mile", "5 mile", "1 mile", "4 mile", "6 mile"]
+        poitype = ["coffee", "park garage", "restaurant", "friend house", "tea", "hospital", "pizza restaurant", "certain address", "shop center", "home", "chinese restaurant", "grocery store", "gas station", "rest stop"]
+        room = ["conference room 50", "conference room 100", "conference room 102"]
+        time = ["5pm", "1pm", "2pm", "4pm", "10am", "9am", "7pm", "3pm", "6pm", "11am"]
+        trafficinfo = ["no traffic","moderate traffic","car collision","heavy traffic"]
+        weeklytime = ["week","monday","tuesday","friday","wednesday","thursday","the 7th","sunday","two day","saturday","next few day","weekend","tomorrow","today"]
+        location = ["menlo park","boston","grand rapid","durham","cleveland","san francisco","redwood city","inglewood","oakland","chicago","mountain view","fresno","san mateo","carson","new york","danville","alameda","manhattan","atherton","brentwood","san jose","alhambra","camarillo","seattle","compton","corona","los angeles","exeter"]
+        agenda = ["discus the merger","sign the nda","go over quarterly report","go over budget","onboard new member"]
+        date = ["tuesday","the 7th","the 8th","the 3rd","tomorrow","the 16th","the 9th","the 2nd","the 20th","thursday","saturday","sunday","two day","the 1st","the 6th","today","week","the 11th","monday","the 14th","friday","the 4th","the 15th","the 13th","wednesday","next few day","the 12th","the 5th","the 10th"]
+        party = ["sister","management","alex","infrastructure team","jeff","hr","vice president","bos","father","brother","marie","executive team","aunt","mother","sale team","martha","jon","ana"]
+        event = ["conference","swim","tennis","yoga","doctor","football","dentist","lab","dinner","optometrist","medicine","meet"]
+
+
+        sorted_constraint = ['none','none','none','none','none','none','none','none','none','none','none','none','none']
+        for i in range(len(unsort_constraint)):
+            if unsort_constraint[i] in request:
+                sorted_constraint[0] = unsort_constraint[i]
+            if unsort_constraint[i] in weatherattribute:
+                sorted_constraint[1] = unsort_constraint[i]
+            if unsort_constraint[i] in distance:
+                sorted_constraint[2] = unsort_constraint[i]
+            if unsort_constraint[i] in poitype:
+                sorted_constraint[3] = unsort_constraint[i]
+            if unsort_constraint[i] in room:
+                sorted_constraint[4] = unsort_constraint[i]
+            if unsort_constraint[i] in time:
+                sorted_constraint[5] = unsort_constraint[i]
+            if unsort_constraint[i] in trafficinfo:
+                sorted_constraint[6] = unsort_constraint[i]
+            if unsort_constraint[i] in weeklytime:
+                sorted_constraint[7] = unsort_constraint[i]
+            if unsort_constraint[i] in location:
+                sorted_constraint[8] = unsort_constraint[i]
+            if unsort_constraint[i] in agenda:
+                sorted_constraint[9] = unsort_constraint[i]
+            if unsort_constraint[i] in date:
+                sorted_constraint[10] = unsort_constraint[i]
+            if unsort_constraint[i] in party:
+                sorted_constraint[11] = unsort_constraint[i]
+            if unsort_constraint[i] in event:
+                sorted_constraint[12] = unsort_constraint[i]
+        return sorted_constraint
         
     def _construct(self, train_json_path, dev_json_path, test_json_path, entity_json_path):
         construct_vocab = False

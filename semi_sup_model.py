@@ -151,12 +151,15 @@ class Model:
                                                           m_len=m_len, z_supervised=None, turn_states=turn_states)
                     self.reader.wrap_result(turn_batch, m_idx, z_idx)
                 print('{}\r'.format(batch_num))
+
         #ev = CamRestEvaluator(cfg.result_path)
         if self.dataset == 'camrest':
             ev = CamRestEvaluator(cfg.result_path)
         elif self.dataset == 'kvret':
             ev = KvretEvaluator(cfg.result_path)
+        #print("DIAO7")
         ev.run_metrics()
+
         self.sedst.train()
 
     def validate(self, data='dev'):

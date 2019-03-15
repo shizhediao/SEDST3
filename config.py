@@ -108,7 +108,7 @@ class _Config:
         self.glove_path = './data/glove/glove.6B.50d.txt'
         self.batch_size = 32
         self.degree_size = 2
-        self.z_length = 8
+        self.z_length = 28
         self.layer_num = 1
         self.dropout_rate = 0.5
         self.epoch_num = 100

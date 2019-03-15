@@ -519,10 +519,12 @@ class KvretReader(_ReaderBase):
         #self.test = self.train
 
     def sort_constraint(self, unsort_constraint):
+        #total=28 request-1 weather-2 distance-2 poitype-2 room-3 time-1 traffic-2 weeklytime-3 location-2 agenda-4 date-3 party-2 event-1
+        '''
         request = ["poi", "distance", "room", "time", "weatherattribute", "agenda", "address", "date", "party"]
         weatherattribute = ["dry", "misty", "frost", "humid", "blizzard", "stormy", "overcast", "snow", "hail", "hot", "windy", "warm", "90f", "rain", "foggy", "dew", "cloudy", "drizzle", "clear sky"]
         distance = ["7 mile", "2 mile", "8 mile", "3 mile", "5 mile", "1 mile", "4 mile", "6 mile"]
-        poitype = ["coffee", "park garage", "restaurant", "friend house", "tea", "hospital", "pizza restaurant", "certain address", "shop center", "home", "chinese restaurant", "grocery store", "gas station", "rest stop"]
+        poitype = ["parking garage", "shopping center", "coffee", "park garage", "restaurant", "friend house", "tea", "hospital", "pizza restaurant", "certain address", "shop center", "home", "chinese restaurant", "grocery store", "gas station", "rest stop"]
         room = ["conference room 50", "conference room 100", "conference room 102"]
         time = ["5pm", "1pm", "2pm", "4pm", "10am", "9am", "7pm", "3pm", "6pm", "11am"]
         trafficinfo = ["no traffic","moderate traffic","car collision","heavy traffic"]
@@ -532,36 +534,67 @@ class KvretReader(_ReaderBase):
         date = ["tuesday","the 7th","the 8th","the 3rd","tomorrow","the 16th","the 9th","the 2nd","the 20th","thursday","saturday","sunday","two day","the 1st","the 6th","today","week","the 11th","monday","the 14th","friday","the 4th","the 15th","the 13th","wednesday","next few day","the 12th","the 5th","the 10th"]
         party = ["sister","management","alex","infrastructure team","jeff","hr","vice president","bos","father","brother","marie","executive team","aunt","mother","sale team","martha","jon","ana"]
         event = ["conference","swim","tennis","yoga","doctor","football","dentist","lab","dinner","optometrist","medicine","meet"]
+        '''
+        request = ["poi", "distance", "room", "time", "weatherattribute", "agenda", "address", "date", "party"]
+        weatherattribute = ["dry", "misty", "frost", "humid", "blizzard", "stormy", "overcast", "snow", "hail", "hot", "windy", "warm", "90f", "rain", "foggy", "dew", "cloudy", "drizzle", "clear_sky"]
+        distance = ["7_mile", "2_mile", "8_mile", "3_mile", "5_mile", "1_mile", "4_mile", "6_mile"]
+        poitype = ["parking_garage", "shopping_center", "coffee", "park_garage", "restaurant", "friend_house", "tea", "hospital", "pizza_restaurant", "certain_address", "shop_center", "home", "chinese_restaurant", "grocery_store", "gas_station", "rest_stop"]
+        room = ["conference_room_50", "conference_room_100", "conference_room_102"]
+        time = ["5pm", "1pm", "2pm", "4pm", "10am", "9am", "7pm", "3pm", "6pm", "11am"]
+        trafficinfo = ["no_traffic","moderate_traffic","car_collision","heavy_traffic"]
+        weeklytime = ["week","monday","tuesday","friday","wednesday","thursday","the_7th","sunday","two_day","saturday","next_few_day","weekend","tomorrow","today"]
+        location = ["menlo_park","boston","grand_rapid","durham","cleveland","san_francisco","redwood_city","inglewood","oakland","chicago","mountain_view","fresno","san_mateo","carson","new york","danville","alameda","manhattan","atherton","brentwood","san jose","alhambra","camarillo","seattle","compton","corona","los_angeles","exeter"]
+        agenda = ["discus_the_merger","sign_the_nda","go_over_quarterly_report","go_over_budget","onboard_new_member"]
+        date = ["tuesday","the_7th","the_8th","the_3rd","tomorrow","the_16th","the_9th","the_2nd","the_20th","thursday","saturday","sunday","two_day","the_1st","the_6th","today","week","the_11th","monday","the_14th","friday","the_4th","the_15th","the_13th","wednesday","next_few_day","the_12th","the_5th","the_10th"]
+        party = ["sister","management","alex","infrastructure_team","jeff","hr","vice_president","bos","father","brother","marie","executive_team","aunt","mother","sale_team","martha","jon","ana"]
+        event = ["conference","swim","tennis","yoga","doctor","football","dentist","lab","dinner","optometrist","medicine","meet"]
 
+        sorted_constraint = ['none','none','none','none','none','none','none','none','none','none','none','none','none','none']
 
-        sorted_constraint = ['none','none','none','none','none','none','none','none','none','none','none','none','none']
         for i in range(len(unsort_constraint)):
             if unsort_constraint[i] in request:
                 sorted_constraint[0] = unsort_constraint[i]
-            if unsort_constraint[i] in weatherattribute:
+            elif unsort_constraint[i] in weatherattribute:
                 sorted_constraint[1] = unsort_constraint[i]
-            if unsort_constraint[i] in distance:
+            elif unsort_constraint[i] in distance:
                 sorted_constraint[2] = unsort_constraint[i]
-            if unsort_constraint[i] in poitype:
+            elif unsort_constraint[i] in poitype:
                 sorted_constraint[3] = unsort_constraint[i]
-            if unsort_constraint[i] in room:
+            elif unsort_constraint[i] in room:
                 sorted_constraint[4] = unsort_constraint[i]
-            if unsort_constraint[i] in time:
+            elif unsort_constraint[i] in time:
                 sorted_constraint[5] = unsort_constraint[i]
-            if unsort_constraint[i] in trafficinfo:
+            elif unsort_constraint[i] in trafficinfo:
                 sorted_constraint[6] = unsort_constraint[i]
-            if unsort_constraint[i] in weeklytime:
+            elif unsort_constraint[i] in weeklytime:
                 sorted_constraint[7] = unsort_constraint[i]
-            if unsort_constraint[i] in location:
+            elif unsort_constraint[i] in location:
                 sorted_constraint[8] = unsort_constraint[i]
-            if unsort_constraint[i] in agenda:
+            elif unsort_constraint[i] in agenda:
                 sorted_constraint[9] = unsort_constraint[i]
-            if unsort_constraint[i] in date:
+            elif unsort_constraint[i] in date:
                 sorted_constraint[10] = unsort_constraint[i]
-            if unsort_constraint[i] in party:
+            elif unsort_constraint[i] in party:
                 sorted_constraint[11] = unsort_constraint[i]
-            if unsort_constraint[i] in event:
+            elif unsort_constraint[i] in event:
                 sorted_constraint[12] = unsort_constraint[i]
+            else:
+                sorted_constraint[13] = unsort_constraint[i]
+
+        s1 = sorted_constraint[0:4]
+        s2 = sorted_constraint[4:8]
+        s3 = sorted_constraint[8:]
+
+        while s1.count('none')>=2 and len(s1)>=3:
+            s1.remove('none')
+        while s2.count('none')>=2 and len(s2)>=3:
+            s2.remove('none')
+        while s3.count('none')>=3 and len(s3)>=3:
+            s3.remove('none')
+
+        sorted_constraint = []
+        sorted_constraint = s1+s2+s3
+
         return sorted_constraint
         
     def _construct(self, train_json_path, dev_json_path, test_json_path, entity_json_path):
@@ -688,9 +721,18 @@ class KvretReader(_ReaderBase):
                     raise ValueError('what is %s prefer, bro?' % prefer)
             else:
                 invalid_key.append(k)
+
         for key in invalid_key:
             constraint_dict.pop(key)
+
+        #add by shizhe to replace " " by "_"
+        for k in constraint_dict:
+            constraint_dict[k] = re.sub(' ', '_', constraint_dict[k])
+
         return constraint_dict
+
+    #def replace_space(self, constraints):
+
 
     def _get_tokenized_data(self, raw_data, add_to_vocab, data_type, is_test=False):
         """
@@ -756,6 +798,10 @@ class KvretReader(_ReaderBase):
                     raw_constraints = constraint_dict.values()
                     raw_constraints_str = self._lemmatize(self._tokenize(' '.join(raw_constraints)))
                     constraints = raw_constraints_str.split()
+                    sorted_constraints = self.sort_constraint(constraints)
+                    #print("raw_constraints_str: ", raw_constraints_str)
+                    #print("unsorted_constraints: ", constraints)
+                    #print("sorted_constraints: ", sorted_constraints)
 
                     '''
                     # add separator
@@ -780,7 +826,7 @@ class KvretReader(_ReaderBase):
                     #requests = sorted(list(dataset_requested.intersection(reqs)))
                     requests = sorted(list(dataset_requested))
 
-                    single_turn['constraint'] = constraints + ['EOS_Z1']
+                    single_turn['constraint'] = sorted_constraints + ['EOS_Z1']
                     single_turn['requested'] = requests + ['EOS_Z2']
                     single_turn['turn_num'] = len(tokenized_dial)
                     single_turn['dial_id'] = dial_id

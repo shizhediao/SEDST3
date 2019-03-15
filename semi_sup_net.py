@@ -254,62 +254,109 @@ class MultiTurnInferenceDecoder_Z(nn.Module):
         super().__init__()
         self.attn_u = Attn(hidden_size)
         #self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
-        self.area_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.area_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
-        # self.area_hidden = nn.Linear(hidden_size, hidden_size)
+        self.request1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.request1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.food_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.food_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
-        # self.food_hidden = nn.Linear(hidden_size, hidden_size)
+        self.weather1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weather1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.pricerange_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.pricerange_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
-        # self.pricerange_hidden = nn.Linear(hidden_size, hidden_size)
+        self.weather2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weather2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req1_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.distance1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.distance1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req2_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.distance2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.distance2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req3_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.poitype1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.poitype1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req4_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req4_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.poitype2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.poitype2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req5_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req5_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.room1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.room1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req6_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req6_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.room2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.room2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req7_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req7_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.room3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.room3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req8_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req8_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.time1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.time1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req9_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req9_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.traffic1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.traffic1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req10_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req10_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.traffic2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.traffic2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req11_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req11_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.weeklytime1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weeklytime1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req12_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req12_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.weeklytime2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weeklytime2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.hidden_style = [self.area_hidden_style, self.food_hidden_style, self.pricerange_hidden_style,
-                             self.req1_hidden_style, self.req2_hidden_style, self.req3_hidden_style,
-                             self.req4_hidden_style, self.req5_hidden_style, self.req6_hidden_style,
-                             self.req7_hidden_style, self.req8_hidden_style, self.req9_hidden_style,
-                             self.req10_hidden_style, self.req11_hidden_style, self.req12_hidden_style]
-        self.hidden = [self.area_hidden, self.food_hidden, self.pricerange_hidden, self.req1_hidden, self.req2_hidden,
-                       self.req3_hidden, self.req4_hidden, self.req5_hidden, self.req6_hidden, self.req7_hidden,
-                       self.req8_hidden, self.req9_hidden, self.req10_hidden, self.req11_hidden, self.req12_hidden]
+        self.weeklytime3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weeklytime3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.location1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.location1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.location2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.location2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.agenda1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.agenda1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.agenda2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.agenda2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.agenda3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.agenda3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.agenda4_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.agenda4_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.date1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.date1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.date2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.date2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.date3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.date3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.party1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.party1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.party2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.party2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.event1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.event1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        #self.hidden_style = [self.area_hidden_style, self.food_hidden_style, self.pricerange_hidden_style, self.req1_hidden_style, self.req2_hidden_style, self.req3_hidden_style, self.req4_hidden_style, self.req5_hidden_style,self.req6_hidden_style, self.req7_hidden_style, self.req8_hidden_style, self.req9_hidden_style, self.req10_hidden_style,self.req11_hidden_style, self.req12_hidden_style]
+        #self.hidden = [self.area_hidden, self.food_hidden, self.pricerange_hidden, self.req1_hidden, self.req2_hidden, self.req3_hidden, self.req4_hidden, self.req5_hidden,self.req6_hidden, self.req7_hidden, self.req8_hidden, self.req9_hidden, self.req10_hidden,self.req11_hidden, self.req12_hidden]
+
+        self.hidden_style = [self.request1_hidden_style, self.weather1_hidden_style,
+                             self.weather2_hidden_style, self.distance1_hidden_style, self.distance2_hidden_style,
+                             self.poitype1_hidden_style,self.poitype2_hidden_style, self.room1_hidden_style, self.room2_hidden_style, self.room3_hidden_style,self.time1_hidden_style, self.traffic1_hidden_style, self.traffic2_hidden_style, self.weeklytime1_hidden_style,
+                             self.weeklytime2_hidden_style, self.weeklytime3_hidden_style, self.location1_hidden_style,
+                             self.location2_hidden_style, self.agenda1_hidden_style, self.agenda2_hidden_style, self.agenda3_hidden_style,
+                             self.agenda4_hidden_style, self.date1_hidden_style, self.date2_hidden_style, self.date3_hidden_style,
+                             self.party1_hidden_style, self.party2_hidden_style, self.event1_hidden_style]
+        self.hidden = [self.request1_hidden, self.weather1_hidden,
+                             self.weather2_hidden, self.distance1_hidden, self.distance2_hidden,
+                             self.poitype1_hidden, self.poitype2_hidden, self.room1_hidden,
+                             self.room2_hidden, self.room3_hidden, self.time1_hidden,
+                             self.traffic1_hidden, self.traffic2_hidden, self.weeklytime1_hidden,
+                             self.weeklytime2_hidden, self.weeklytime3_hidden, self.location1_hidden,
+                             self.location2_hidden, self.agenda1_hidden, self.agenda2_hidden,
+                             self.agenda3_hidden, self.agenda4_hidden, self.date1_hidden, self.date2_hidden,
+                             self.date3_hidden, self.party1_hidden, self.party2_hidden, self.event1_hidden]
 
         self.w1 = nn.Linear(hidden_size, vocab_size)
         self.mu = nn.Linear(vocab_size, embed_size)
@@ -410,56 +457,109 @@ class MultiTurnPriorDecoder_Z(nn.Module):
         super().__init__()
         self.attn_u = Attn(hidden_size)
         #self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
-        self.area_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.area_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
-        # self.area_hidden = nn.Linear(hidden_size, hidden_size)
+        self.request1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.request1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.food_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.food_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
-        # self.food_hidden = nn.Linear(hidden_size, hidden_size)
+        self.weather1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weather1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.pricerange_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.pricerange_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
-        # self.pricerange_hidden = nn.Linear(hidden_size, hidden_size)
+        self.weather2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weather2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req1_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.distance1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.distance1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req2_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.distance2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.distance2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req3_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.poitype1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.poitype1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req4_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req4_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.poitype2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.poitype2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req5_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req5_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.room1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.room1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req6_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req6_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.room2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.room2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req7_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req7_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.room3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.room3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req8_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req8_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.time1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.time1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req9_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req9_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.traffic1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.traffic1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req10_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req10_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.traffic2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.traffic2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req11_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req11_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.weeklytime1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weeklytime1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.req12_hidden_style = nn.Linear(hidden_size, hidden_size)
-        self.req12_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+        self.weeklytime2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weeklytime2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
-        self.hidden_style = [self.area_hidden_style, self.food_hidden_style, self.pricerange_hidden_style, self.req1_hidden_style, self.req2_hidden_style, self.req3_hidden_style, self.req4_hidden_style, self.req5_hidden_style,self.req6_hidden_style, self.req7_hidden_style, self.req8_hidden_style, self.req9_hidden_style, self.req10_hidden_style,self.req11_hidden_style, self.req12_hidden_style]
-        self.hidden = [self.area_hidden, self.food_hidden, self.pricerange_hidden, self.req1_hidden, self.req2_hidden, self.req3_hidden, self.req4_hidden, self.req5_hidden,self.req6_hidden, self.req7_hidden, self.req8_hidden, self.req9_hidden, self.req10_hidden,self.req11_hidden, self.req12_hidden]
+        self.weeklytime3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.weeklytime3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.location1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.location1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.location2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.location2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.agenda1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.agenda1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.agenda2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.agenda2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.agenda3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.agenda3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.agenda4_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.agenda4_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.date1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.date1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.date2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.date2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.date3_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.date3_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.party1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.party1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.party2_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.party2_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        self.event1_hidden_style = nn.Linear(hidden_size, hidden_size)
+        self.event1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
+
+        #self.hidden_style = [self.area_hidden_style, self.food_hidden_style, self.pricerange_hidden_style, self.req1_hidden_style, self.req2_hidden_style, self.req3_hidden_style, self.req4_hidden_style, self.req5_hidden_style,self.req6_hidden_style, self.req7_hidden_style, self.req8_hidden_style, self.req9_hidden_style, self.req10_hidden_style,self.req11_hidden_style, self.req12_hidden_style]
+        #self.hidden = [self.area_hidden, self.food_hidden, self.pricerange_hidden, self.req1_hidden, self.req2_hidden, self.req3_hidden, self.req4_hidden, self.req5_hidden,self.req6_hidden, self.req7_hidden, self.req8_hidden, self.req9_hidden, self.req10_hidden,self.req11_hidden, self.req12_hidden]
+
+        self.hidden_style = [self.request1_hidden_style, self.weather1_hidden_style,
+                             self.weather2_hidden_style, self.distance1_hidden_style, self.distance2_hidden_style,
+                             self.poitype1_hidden_style,self.poitype2_hidden_style, self.room1_hidden_style, self.room2_hidden_style, self.room3_hidden_style,self.time1_hidden_style, self.traffic1_hidden_style, self.traffic2_hidden_style, self.weeklytime1_hidden_style,
+                             self.weeklytime2_hidden_style, self.weeklytime3_hidden_style, self.location1_hidden_style,
+                             self.location2_hidden_style, self.agenda1_hidden_style, self.agenda2_hidden_style, self.agenda3_hidden_style,
+                             self.agenda4_hidden_style, self.date1_hidden_style, self.date2_hidden_style, self.date3_hidden_style,
+                             self.party1_hidden_style, self.party2_hidden_style, self.event1_hidden_style]
+        self.hidden = [self.request1_hidden, self.weather1_hidden,
+                             self.weather2_hidden, self.distance1_hidden, self.distance2_hidden,
+                             self.poitype1_hidden, self.poitype2_hidden, self.room1_hidden,
+                             self.room2_hidden, self.room3_hidden, self.time1_hidden,
+                             self.traffic1_hidden, self.traffic2_hidden, self.weeklytime1_hidden,
+                             self.weeklytime2_hidden, self.weeklytime3_hidden, self.location1_hidden,
+                             self.location2_hidden, self.agenda1_hidden, self.agenda2_hidden,
+                             self.agenda3_hidden, self.agenda4_hidden, self.date1_hidden, self.date2_hidden,
+                             self.date3_hidden, self.party1_hidden, self.party2_hidden, self.event1_hidden]
 
         self.w1 = nn.Linear(hidden_size, vocab_size)
         self.proj_copy1 = nn.Linear(hidden_size, hidden_size)

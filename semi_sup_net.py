@@ -382,7 +382,7 @@ class MultiTurnInferenceDecoder_Z(nn.Module):
         """
         sparse_u_input = Variable(get_sparse_input_efficient(u_input_np), requires_grad=False)  # [B,T,V]
         sparse_m_input = Variable(get_sparse_input_efficient(m_input_np), requires_grad=False)  # [B,T,V]
-        mlp_index = mlp_index % 12
+        # mlp_index = mlp_index % 12
         # if cfg.cuda: sparse_m_input = sparse_m_input.cuda()
         # if cfg.cuda: sparse_u_input = sparse_u_input.cuda()
         hidden_style_one = self.hidden_style[mlp_index]
@@ -571,12 +571,13 @@ class MultiTurnPriorDecoder_Z(nn.Module):
     def forward(self, u_input, u_enc_out, pv_pz_proba, pv_z_dec_out, embed_z, last_hidden, rand_eps, u_input_np,
                 m_input_np, mlp_index):
         sparse_u_input = Variable(get_sparse_input_efficient(u_input_np), requires_grad=False)
-        mlp_index = mlp_index % 12
+        #mlp_index = mlp_index % 12
         #print("mlp_index",mlp_index)
 
         hidden_style_one = self.hidden_style[mlp_index]
         hidden_one = self.hidden[mlp_index]
         last_hidden = hidden_style_one(last_hidden)
+
         u_context = self.attn_u(last_hidden, u_enc_out)  #1*32*50
         embed_z = F.dropout(embed_z, self.dropout_rate)
         gru_in = torch.cat([u_context, embed_z], 2)  # 1*32*100
@@ -584,6 +585,7 @@ class MultiTurnPriorDecoder_Z(nn.Module):
         #gru_out, last_hidden = self.gru(embed_z, last_hidden)
         gru_out = hidden_one(gru_in)
         last_hidden = gru_out
+
 
         gen_score = self.w1(gru_out).squeeze(0)
         u_copy_score = F.tanh(self.proj_copy1(u_enc_out.transpose(0, 1)))  # [B,T,H]
@@ -691,8 +693,9 @@ class MultinomialKLDivergenceLoss(nn.Module):
     def forward(self, p_proba, q_proba): # [B, T, V]
         mask = torch.zeros(p_proba.size(0), p_proba.size(1))
         for i in range(p_proba.size(0)):
-            for j in range(q_proba.size(0)):
-                topv, topi = torch.max(p_proba[i,j], -1)
+            #for j in range(q_proba.size(0)):
+            for j in range(p_proba.size(1)):
+                topv, topi = torch.max(p_proba[i, j], -1)
                 if topi.item() == 0:
                     mask[i,j] = 0
                 else:
@@ -779,6 +782,7 @@ class SemiSupervisedSEDST(nn.Module):
         batch_size = u_input.size(1)
         u_enc_out, u_enc_hidden = self.u_encoder(u_input, u_len)    #u_enc_out = [20, 24, 50]  u_enc_hidden = [2, 24, 50]
         last_hidden = u_enc_hidden[:-1] #[1, 24, 50]
+
         # initial approximate embedding: SOS token initialized with all zero
         # Pi(z|u)
         pz_ae = cuda_(Variable(torch.zeros(1, batch_size, self.embed_size)))
@@ -786,6 +790,7 @@ class SemiSupervisedSEDST(nn.Module):
         pz_dec_outs = []
         z_length = z_input.size(0) if z_input is not None else self.z_length
         #z_length=self.z_length
+
         for t in range(z_length):
             if cfg.sampling:
                 rand_eps = Variable(torch.normal(means=torch.zeros(1, batch_size, cfg.embedding_size), std=1))
@@ -829,6 +834,7 @@ class SemiSupervisedSEDST(nn.Module):
 
             p_enc_out, p_enc_hidden = self.m_encoder(m_input, m_len)
             last_hidden = p_enc_hidden[:-1]
+            fix_last_hidden = last_hidden
 
             qz_ae = cuda_(Variable(torch.zeros(1, batch_size, self.embed_size)))
             qz_proba, qz_mu, qz_log_sigma = [], [], []

@@ -59,7 +59,7 @@ class _Config:
         self.embedding_size = 50
         self.hidden_size = 50
         self.split = (3, 1, 1)
-        self.lr = 0.003
+        self.lr = 0.001
         self.lr_decay = 0.5
         self.vocab_path = './vocab/vocab09_slot_space.pkl'
         self.data = './data/CamRest676/CamRest676.json'
@@ -68,7 +68,7 @@ class _Config:
         self.glove_path = './data/glove/glove.6B.50d.txt'
         self.batch_size = 32
         self.degree_size = 5
-        self.z_length = 8
+        self.z_length = 12
         self.layer_num = 1
         self.dropout_rate = 0.5
         self.epoch_num = 100
@@ -97,7 +97,7 @@ class _Config:
         self.embedding_size = 50
         self.hidden_size = 50
         self.split = None
-        self.lr = 0.003
+        self.lr = 0.0005
         self.q_hidden_size = 50
         self.lr_decay = 0.5
         self.vocab_path = './vocab/vocab10_slot_space.pkl'
@@ -108,7 +108,7 @@ class _Config:
         self.glove_path = './data/glove/glove.6B.50d.txt'
         self.batch_size = 32
         self.degree_size = 2
-        self.z_length = 28
+        self.z_length = 27
         self.layer_num = 1
         self.dropout_rate = 0.5
         self.epoch_num = 100

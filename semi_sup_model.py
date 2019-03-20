@@ -90,7 +90,7 @@ class Model:
                                                                   z_supervised=True, turn_states=turn_states, p_input=p_input, p_input_np=p_input_np,
                                                                   u_len=u_len, m_len=m_len, mode='train')
                         loss.backward(retain_graph=turn_num!=len(dial_batch)-1)
-                        grad = torch.nn.utils.clip_grad_norm(self.sedst.parameters(),5.0)
+                        grad = torch.nn.utils.clip_grad_norm_(self.sedst.parameters(),5.0)
                         optim.step()
                         sup_loss += loss.item()
                         sup_cnt += 1
@@ -106,7 +106,7 @@ class Model:
                                                               z_supervised=False, turn_states=turn_states,p_input=p_input, p_input_np=p_input_np,
                                                               u_len=u_len, m_len=m_len, mode='train')
                         loss.backward(retain_graph=turn_num!=len(dial_batch)-1 and not turn_num == cfg.trunc_turn-1)
-                        grad = torch.nn.utils.clip_grad_norm(self.sedst.parameters(),4.0)
+                        grad = torch.nn.utils.clip_grad_norm_(self.sedst.parameters(),4.0)
                         optim.step()
                         unsup_loss += loss.item()
                         if cfg.truncated and not np.isnan(loss.data.cpu().numpy()) and not np.isnan(grad) and iter_num % 10 == 0:

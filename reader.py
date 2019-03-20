@@ -353,6 +353,14 @@ class CamRest676Reader(_ReaderBase):
                 sorted_constraint[2] = unsort_constraint[i]
         return sorted_constraint
 
+    def sort_request(self, unsorted_request):
+        request_list = ['address', 'name', 'phone', 'postcode', 'food', 'area', 'pricerange']
+        sorted_request = ['none','none','none','none','none','none','none']
+        for index, item in enumerate(request_list):
+            if item in unsorted_request:
+                sorted_request[index] = item
+        return sorted_request
+
     def _get_tokenized_data(self, raw_data, db_data, construct_vocab):
         tokenized_data = []
         vk_map = self._value_key_map(db_data)
@@ -372,7 +380,9 @@ class CamRest676Reader(_ReaderBase):
 
                 sorted_constraint = self.sort_constraint(constraint)
                 degree = len(self.db_search(constraint))
-                requested = sorted(requested)
+                #requested = sorted(requested)
+
+                requested = self.sort_request(requested)
                 constraint.append('EOS_Z1')
                 sorted_constraint.append('EOS_Z1')
                 requested.append('EOS_Z2')
@@ -549,6 +559,25 @@ class KvretReader(_ReaderBase):
         party = ["sister","management","alex","infrastructure_team","jeff","hr","vice_president","bos","father","brother","marie","executive_team","aunt","mother","sale_team","martha","jon","ana"]
         event = ["conference","swim","tennis","yoga","doctor","football","dentist","lab","dinner","optometrist","medicine","meet"]
 
+        sorted_constraint = []
+        requestable_slot = [request, weatherattribute, distance, poitype, room, time, trafficinfo, weeklytime, location, agenda, date, party, event]
+        for one_requestable_slot in requestable_slot:
+            flag = False
+            for item in one_requestable_slot:
+                if item in unsort_constraint:
+                    sorted_constraint.append(item)
+                    flag = True
+            if flag == False:
+                sorted_constraint.append('none')
+
+        '''
+        for one_requestable_slot in requestable_slot:
+            for item in one_requestable_slot:
+                item_set = set(item.split())
+                if item_set == item_set & set(unsort_constraint):
+                    for item_split in item.split():
+                        sorted_constraint.append(item_split)
+
         sorted_constraint = ['none','none','none','none','none','none','none','none','none','none','none','none','none','none']
 
         for i in range(len(unsort_constraint)):
@@ -580,23 +609,32 @@ class KvretReader(_ReaderBase):
                 sorted_constraint[12] = unsort_constraint[i]
             else:
                 sorted_constraint[13] = unsort_constraint[i]
-
+        '''
         s1 = sorted_constraint[0:4]
         s2 = sorted_constraint[4:8]
         s3 = sorted_constraint[8:]
 
-        while s1.count('none')>=2 and len(s1)>=3:
+        while s1.count('none')>=2 and len(s1)>=2:
             s1.remove('none')
-        while s2.count('none')>=2 and len(s2)>=3:
+        while s2.count('none')>=2 and len(s2)>=2:
             s2.remove('none')
-        while s3.count('none')>=3 and len(s3)>=3:
+        while s3.count('none')>=2 and len(s3)>=2:
             s3.remove('none')
 
         sorted_constraint = []
         sorted_constraint = s1+s2+s3
 
         return sorted_constraint
-        
+
+    def sort_request(self, unsorted_request):
+        request_list = ['weather_attribute', 'poi', 'poi_type', 'traffic', 'address', 'distance', 'date', 'time', 'party', 'agenda', 'room']
+        sorted_request = ['none','none','none','none','none','none','none','none','none','none', 'none']
+        for index, item in enumerate(request_list):
+            if item in unsorted_request:
+                sorted_request[index] = item
+        while sorted_request.count('none')>=2:
+            sorted_request.remove('none')
+        return sorted_request
     def _construct(self, train_json_path, dev_json_path, test_json_path, entity_json_path):
         construct_vocab = False
         if not os.path.isfile(cfg.vocab_path):
@@ -799,18 +837,11 @@ class KvretReader(_ReaderBase):
                     raw_constraints_str = self._lemmatize(self._tokenize(' '.join(raw_constraints)))
                     constraints = raw_constraints_str.split()
                     sorted_constraints = self.sort_constraint(constraints)
+                    #sorted_constraints = constraints
+
                     #print("raw_constraints_str: ", raw_constraints_str)
                     #print("unsorted_constraints: ", constraints)
                     #print("sorted_constraints: ", sorted_constraints)
-
-                    '''
-                    # add separator
-                    constraints = []
-                    for item in raw_constraints:
-                        if constraints:
-                            constraints.append(';')
-                        constraints.extend(item.split())
-                    '''
 
                     # get requests
                     dataset_requested = set(
@@ -824,7 +855,8 @@ class KvretReader(_ReaderBase):
                     #print("reqs = ", reqs)
                     #print("intersect = ", dataset_requested.intersection(reqs))
                     #requests = sorted(list(dataset_requested.intersection(reqs)))
-                    requests = sorted(list(dataset_requested))
+                    #requests = sorted(list(dataset_requested))
+                    requests = self.sort_request(list(dataset_requested))
 
                     single_turn['constraint'] = sorted_constraints + ['EOS_Z1']
                     single_turn['requested'] = requests + ['EOS_Z2']

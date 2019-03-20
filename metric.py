@@ -240,13 +240,32 @@ class GenericEvaluator:
                                                              == {'north'} and 'american' in gen) \
                                             or (gen.difference(truth).union(truth.difference(gen)) == {'oriental'} and 'asian' in gen):
                     goal_accr += 1
-                #else:
-                #    print(gen,truth)
+                else:
+                    if goal_accr % 10 ==0:
+                        print("--------FAIL GENERATE REQUEST--------")
+                        print("generated_latent: ", row['generated_latent'])
+                        print("ground truth latent: ", row['latent'])
+                        print("generated request: ", gen)
+                        print("ground truth request: ", truth)
+                        # print("raw data: s", row)
+                        print("--------FAIL GENERATE REQUEST--------")
 
             if tracker_type == 'request' and truth:
                 total += 1
                 if set(gen) == set(truth):
                     goal_accr += 1
+                else:
+                    '''
+                    if goal_accr % 10 ==0:
+                        print("--------FAIL GENERATE REQUEST--------")
+                        print("generated_latent: ", row['generated_latent'])
+                        print("ground truth latent: ", row['latent'])
+                        print("generated request: ", gen)
+                        print("ground truth request: ", truth)
+                        #print("raw data: s", row)
+                        print("--------FAIL GENERATE REQUEST--------")
+                    '''
+
             if tracker_type == 'all' and truth and valid:
                 total += 1
                 if set(gen) == set(truth):
@@ -354,7 +373,8 @@ class CamRestEvaluator(GenericEvaluator):
 
             for req in raw_data[dial_id]['goal']['request-slots']:
                 truth_req.append(req)
-            truth_req = set(truth_response_req).intersection(truth_req)
+            truth_req = set(truth_response_req).intersection(truth_req)   #3.15 comment this to try out
+            #truth_req = truth_response_req
 
             '''
             if truth_cons:
@@ -367,14 +387,6 @@ class CamRestEvaluator(GenericEvaluator):
             if truth_cons and len(truth_req) != 0:
                 gen_latent_split = gen_latent.split()
 
-                print("----MATCHRATE----")
-                print("gen_latent",gen_latent)
-                print("generated constrain: ", gen_cons)
-                print("ground truth constrain", truth_cons)
-                print("generated request: ", gen_req)
-                print("ground truth request", truth_req)
-                print("----MATCHRATE----")
-
                 if gen_cons == truth_cons:
                     match += 1
                     succ = True
@@ -386,11 +398,20 @@ class CamRestEvaluator(GenericEvaluator):
                         success += 1
                     else:
                         '''
+                        print("----FAIL-MATCHRATE----")
+                        print("gen_latent",gen_latent)
+                        print("generated constrain: ", gen_cons)
+                        print("ground truth constrain", truth_cons)
+                        print("generated request: ", gen_req)
+                        print("ground truth request", truth_req)
                         print("gen_response_token",gen_response_token)
                         print("response_token", response_token)
                         print("----------DIAL------------")
                         print(dial)
+                        print(raw_data[dial_id])
+                        print(raw_data[dial_id]['goal']['request-slots'])
                         print("----------DIAL------------")
+                        print("----FAIL-MATCHRATE----")
                         '''
                 #else:
                 #    print(gen_cons, truth_cons)
@@ -559,6 +580,7 @@ class KvretEvaluator(GenericEvaluator):
 
             if truth_cons and len(truth_req)!=0:
                 gen_latent_split = gen_latent.split()
+                '''
                 print("----MATCHRATE----")
                 print("gen_latent",gen_latent)
                 print("generated constrain: ", gen_cons)
@@ -566,7 +588,7 @@ class KvretEvaluator(GenericEvaluator):
                 print("generated request: ", gen_req)
                 print("ground truth request", truth_req)
                 print("----MATCHRATE----")
-
+                '''
                 if self.constraint_same(gen_cons, truth_cons):
                     match += 1
                     succ = True
@@ -574,14 +596,16 @@ class KvretEvaluator(GenericEvaluator):
                         if r not in gen_req:
                             succ = False
                     if succ:
-                        print("bingo")
+                        #print("bingo")
                         success += 1
                     else:
+                        '''
                         print("gen_response_token", gen_response_token)
                         print("response_token", response_token)
                         print("----------DIAL------------")
                         print(dial)
                         print("----------DIAL------------")
+                        '''
                 total += 1
 
         return match / total, success / total

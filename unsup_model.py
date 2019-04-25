@@ -171,6 +171,28 @@ class Model:
                                                                                                      0], grad))
                     prev_z = turn_batch['latent']
 
+                if iter_num % 20 == 0:
+                    #do validation every 5000 training iters
+                    epoch_sup_loss, epoch_unsup_loss = sup_loss / (sup_cnt + 1e-8), unsup_loss / (unsup_cnt + 1e-8)
+                    logging.info(
+                        'avg training loss in epoch %d sup:%f unsup:%f' % (epoch, epoch_sup_loss, epoch_unsup_loss))
+
+                    # do validation
+
+                    valid_sup_loss, valid_unsup_loss = self.validate()
+                    logging.info(
+                        'validation loss in epoch %d sup:%f unsup:%f' % (epoch, valid_sup_loss, valid_unsup_loss))
+                    valid_loss = valid_sup_loss + valid_unsup_loss
+                    if valid_loss <= prev_min_loss:
+                        self.save_model(epoch)
+                        prev_min_loss = valid_loss
+                    #else:
+                    #    early_stop_count -= 1
+                    #    lr *= cfg.lr_decay
+                    #    if not early_stop_count:
+                    #        break
+                    #    logging.info('early stop countdown %d, learning rate %f' % (early_stop_count, lr))
+
             epoch_sup_loss, epoch_unsup_loss = sup_loss / (sup_cnt + 1e-8), unsup_loss / (unsup_cnt + 1e-8)
             train_time += time.time() - sw
 
@@ -217,10 +239,10 @@ class Model:
                         self.reader.wrap_result(turn_batch, m_idx, z_idx)
                     prev_z = z_idx
                 # print('{}\r'.format(batch_num))
-            ev = self.EV(result_path=cfg.result_path)
-            res = ev.run_metrics()
+            #ev = self.EV(result_path=cfg.result_path)
+            #res = ev.run_metrics()
         self.m.train()
-        return res
+        #return res
 
     def validate(self, data='dev'):
         self.m.eval()
@@ -261,7 +283,8 @@ class Model:
             sup_loss /= (sup_cnt + 1e-8)
             unsup_loss /= (unsup_cnt + 1e-8)
         self.m.train()
-        res = self.eval()
+        #res = self.eval()
+        self.eval()
         return sup_loss, unsup_loss
 
     def save_model(self, epoch, path=None):

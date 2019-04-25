@@ -538,7 +538,7 @@ class UnsupervisedSEDST(nn.Module):
         decoded_t = finished[0].decoded
         decoded_t = [_.item() for _ in decoded_t]
         decoded_sentence = self.vocab.sentence_decode(decoded_t, cfg.eos_m_token)
-        print(decoded_sentence)
+        #print(decoded_sentence)
         generated = torch.cat(finished[0].decoded, dim=1).data  # [B=1, T]
         return generated
 

@@ -145,7 +145,7 @@ class _Config:
         self.dev = './data/ubuntu/Validation.dialogues.pkl'
         self.test = './data/ubuntu/Test.dialogues.pkl'
         self.glove_path = './data/fasttext/crawl-300d-2M.vec'
-        self.batch_size = 32
+        self.batch_size = 16
         self.degree_size = 2
         self.z_length = 5
         self.layer_num = 1
@@ -181,7 +181,7 @@ class _Config:
         self.vocab_path = './vocab/jd20000.pkl'
         self.data = './data/jd/jd.all.seg'
         self.glove_path = './data/fasttext/wiki.zh.vec'
-        self.batch_size = 32
+        self.batch_size = 16
         self.degree_size = 2
         self.z_length = 10
         self.layer_num = 1

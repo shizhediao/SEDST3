@@ -253,7 +253,7 @@ class MultiTurnInferenceDecoder_Z(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, dropout_rate):
         super().__init__()
         self.attn_u = Attn(hidden_size)
-        #self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
+        self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
         self.request1_hidden_style = nn.Linear(hidden_size, hidden_size)
         self.request1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
@@ -385,16 +385,18 @@ class MultiTurnInferenceDecoder_Z(nn.Module):
         # mlp_index = mlp_index % 12
         # if cfg.cuda: sparse_m_input = sparse_m_input.cuda()
         # if cfg.cuda: sparse_u_input = sparse_u_input.cuda()
+        '''
         hidden_style_one = self.hidden_style[mlp_index]
         hidden_one = self.hidden[mlp_index]
         last_hidden = hidden_style_one(last_hidden)
         u_context = self.attn_u(last_hidden, u_enc_out)  #1*32*50
+        '''
         embed_z = F.dropout(embed_z, self.dropout_rate)
-        gru_in = torch.cat([u_context, embed_z], 2)  # 1*32*100
+        #gru_in = torch.cat([u_context, embed_z], 2)  # 1*32*100
 
-        #gru_out, last_hidden = self.gru(embed_z, last_hidden)
-        gru_out = hidden_one(gru_in)
-        last_hidden = gru_out
+        gru_out, last_hidden = self.gru(embed_z, last_hidden)
+        #gru_out = hidden_one(gru_in)
+        #last_hidden = gru_out
 
         gen_score = self.w1(gru_out).squeeze(0) # [B,V]
         u_copy_score = F.tanh(self.proj_copy1(u_enc_out.transpose(0, 1)))  # [B,T,H]
@@ -456,7 +458,7 @@ class MultiTurnPriorDecoder_Z(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, dropout_rate):
         super().__init__()
         self.attn_u = Attn(hidden_size)
-        #self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
+        self.gru = nn.GRU(embed_size, hidden_size, dropout=dropout_rate)
         self.request1_hidden_style = nn.Linear(hidden_size, hidden_size)
         self.request1_hidden = nn.Linear(embed_size + hidden_size, hidden_size)
 
@@ -574,18 +576,17 @@ class MultiTurnPriorDecoder_Z(nn.Module):
         #mlp_index = mlp_index % 12
         #print("mlp_index",mlp_index)
 
-        hidden_style_one = self.hidden_style[mlp_index]
+        #hidden_style_one = self.hidden_style[mlp_index]
         hidden_one = self.hidden[mlp_index]
-        last_hidden = hidden_style_one(last_hidden)
+        #last_hidden = hidden_style_one(last_hidden)
 
-        u_context = self.attn_u(last_hidden, u_enc_out)  #1*32*50
+        #u_context = self.attn_u(last_hidden, u_enc_out)  #1*32*50
         embed_z = F.dropout(embed_z, self.dropout_rate)
-        gru_in = torch.cat([u_context, embed_z], 2)  # 1*32*100
+        #gru_in = torch.cat([u_context, embed_z], 2)  # 1*32*100
 
-        #gru_out, last_hidden = self.gru(embed_z, last_hidden)
-        gru_out = hidden_one(gru_in)
-        last_hidden = gru_out
-
+        gru_out, last_hidden = self.gru(embed_z, last_hidden)
+        #gru_out = hidden_one(gru_in)
+        #last_hidden = gru_out
 
         gen_score = self.w1(gru_out).squeeze(0)
         u_copy_score = F.tanh(self.proj_copy1(u_enc_out.transpose(0, 1)))  # [B,T,H]
@@ -790,6 +791,7 @@ class SemiSupervisedSEDST(nn.Module):
         pz_dec_outs = []
         z_length = z_input.size(0) if z_input is not None else self.z_length
         #z_length=self.z_length
+        fix_last_hidden = last_hidden
 
         for t in range(z_length):
             if cfg.sampling:
@@ -799,7 +801,7 @@ class SemiSupervisedSEDST(nn.Module):
             if cfg.cuda: rand_eps = rand_eps.cuda()
             pz_ae, last_hidden, pz_dec_out, proba, appr_emb, log_sigma_ae = \
                 self.pz_decoder(u_input=u_input, u_enc_out=u_enc_out, pv_pz_proba=pv_pz_proba, pv_z_dec_out=pv_z_outs,
-                                embed_z=pz_ae, last_hidden=last_hidden, rand_eps=rand_eps, u_input_np=u_input_np,
+                                embed_z=pz_ae, last_hidden=fix_last_hidden, rand_eps=rand_eps, u_input_np=u_input_np,
                                 m_input_np=m_input_np, mlp_index=t)
             pz_proba.append(proba)
             pz_mu.append(appr_emb)
@@ -834,7 +836,7 @@ class SemiSupervisedSEDST(nn.Module):
 
             p_enc_out, p_enc_hidden = self.m_encoder(m_input, m_len)
             last_hidden = p_enc_hidden[:-1]
-            fix_last_hidden = last_hidden
+
 
             qz_ae = cuda_(Variable(torch.zeros(1, batch_size, self.embed_size)))
             qz_proba, qz_mu, qz_log_sigma = [], [], []

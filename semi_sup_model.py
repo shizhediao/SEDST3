@@ -76,6 +76,7 @@ class Model:
                 all_turn_states= []                
                 turn_states = {}
                 for turn_num, turn_batch in enumerate(dial_batch):
+                    #print('iter %d turn %d' % (iter_num, turn_num))
                     if turn_num == cfg.trunc_turn:
                         break
                     if cfg.truncated:
@@ -115,6 +116,8 @@ class Model:
                         logging.debug(
                             'unsupervised loss:{} m_loss:{} kl_div_loss:{} grad:{}'.format(loss.item(), m_loss.item(),
                                                                                            kl_div_loss.item(), grad))
+
+
             epoch_sup_loss, epoch_unsup_loss = sup_loss / (sup_cnt + 1e-8), unsup_loss / (unsup_cnt + 1e-8)
             logging.info('avg training loss in epoch %d sup:%f unsup:%f' % (epoch, epoch_sup_loss, epoch_unsup_loss))
 

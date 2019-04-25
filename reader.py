@@ -239,6 +239,7 @@ class _ReaderBase:
             all_batches += batches
         self._mark_batch_as_supervised(all_batches)
         random.shuffle(all_batches)
+        print("length of all_batched = ", len(all_batches))
         for i,batch in enumerate(all_batches):
             yield self._transpose_batch(batch)
 
@@ -764,8 +765,8 @@ class KvretReader(_ReaderBase):
             constraint_dict.pop(key)
 
         #add by shizhe to replace " " by "_"
-        for k in constraint_dict:
-            constraint_dict[k] = re.sub(' ', '_', constraint_dict[k])
+        #for k in constraint_dict:
+        #    constraint_dict[k] = re.sub(' ', '_', constraint_dict[k])
 
         return constraint_dict
 
@@ -836,8 +837,8 @@ class KvretReader(_ReaderBase):
                     raw_constraints = constraint_dict.values()
                     raw_constraints_str = self._lemmatize(self._tokenize(' '.join(raw_constraints)))
                     constraints = raw_constraints_str.split()
-                    sorted_constraints = self.sort_constraint(constraints)
-                    #sorted_constraints = constraints
+                    #sorted_constraints = self.sort_constraint(constraints)
+                    sorted_constraints = constraints
 
                     #print("raw_constraints_str: ", raw_constraints_str)
                     #print("unsorted_constraints: ", constraints)
@@ -855,8 +856,8 @@ class KvretReader(_ReaderBase):
                     #print("reqs = ", reqs)
                     #print("intersect = ", dataset_requested.intersection(reqs))
                     #requests = sorted(list(dataset_requested.intersection(reqs)))
-                    #requests = sorted(list(dataset_requested))
-                    requests = self.sort_request(list(dataset_requested))
+                    requests = sorted(list(dataset_requested))
+                    #requests = self.sort_request(list(dataset_requested))
 
                     single_turn['constraint'] = sorted_constraints + ['EOS_Z1']
                     single_turn['requested'] = requests + ['EOS_Z2']

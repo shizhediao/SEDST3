@@ -240,6 +240,7 @@ class GenericEvaluator:
                                                              == {'north'} and 'american' in gen) \
                                             or (gen.difference(truth).union(truth.difference(gen)) == {'oriental'} and 'asian' in gen):
                     goal_accr += 1
+                '''
                 else:
                     if goal_accr % 10 ==0:
                         print("--------FAIL GENERATE REQUEST--------")
@@ -249,7 +250,7 @@ class GenericEvaluator:
                         print("ground truth request: ", truth)
                         # print("raw data: s", row)
                         print("--------FAIL GENERATE REQUEST--------")
-
+                '''
             if tracker_type == 'request' and truth:
                 total += 1
                 if set(gen) == set(truth):
@@ -270,6 +271,14 @@ class GenericEvaluator:
                 total += 1
                 if set(gen) == set(truth):
                     goal_accr += 1
+                    print("----------------")
+                    print("user: ", row['user'])
+                    print("generated_latent: ", row['generated_latent'])
+                    print("ground truth latent: ", row['latent'])
+                    print("generated response: ", row['generated_response'])
+                    print("ground truth response: ", row['response'])
+                    print("----------------")
+
         '''
         print("===========================")
         print("tracker_type = ", tracker_type)

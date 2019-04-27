@@ -171,8 +171,8 @@ class Model:
                                                                                                      0], grad))
                     prev_z = turn_batch['latent']
 
-                if iter_num % 20 == 0:
-                    #do validation every 5000 training iters
+                if iter_num % 10000 == 0 and iter_num != 0:
+                    #do validation every 1000- training iters
                     epoch_sup_loss, epoch_unsup_loss = sup_loss / (sup_cnt + 1e-8), unsup_loss / (unsup_cnt + 1e-8)
                     logging.info(
                         'avg training loss in epoch %d sup:%f unsup:%f' % (epoch, epoch_sup_loss, epoch_unsup_loss))
